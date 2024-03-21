@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Marcas Divisiones Regiones Ciudades</title>
+    <!-- Bootstrap -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+</head>
+<body>
+    <div class="container">
+
+        <form action="php/procesarDatos.php" method="POST" id="formulario" enctype="multipart/form-data">
+            
+            <div class="mt-4">
+                <label for="titulo">Titulo</label>
+                <input type="text" class="form-control" name="titulo" id="titulo" placeholder="PRUEBA">
+            </div>
+
+            <div class="mt-4">
+                <label for="descripcion">Descripcion</label>
+                <input type="text" class="form-control pb-4" name="descripcion" id="descripcion" placeholder="DESCRIBE EL CONTENIDO">
+            </div>
+
+            <!-- BOTON ARCHIVOS -->
+            <div class="mt-4 d-flex align-items-center justify-content-between">
+                <a href="#" class="mt-4 btn btn-success col-md-1" id="botonArchivo"><i class="bi bi-plus-circle"></i></a>
+                <div id="contadorArchivos"></div>
+                <div class="col-md-4 mr-4" id="cantidadArchivos"></div>
+            </div>
+
+            <div class="mt-4" id="divArchivos">
+                <label for="portada">Portada</label>
+                <input type="file" name="portada" id="portada">
+    
+                <div class="mt-4" id="contenedorArchivos">
+                    <label for="archivos">Archivos</label> <br><br>
+                    <input type="file" name="archivo" multiple>
+                </div>
+            </div>
+            
+            <h5 class="mt-4" for="enviarA">Enviar a:</h5>
+            <div class="row mt-2 mb-4">
+                <h5 for="puesto" class="mt-2">Puesto: </h5> 
+                <div class="mt-2 col-md-4">
+                    <input type="checkbox" name="puesto[]" id="ejecutivoATC" value="Ejecutivo ATC">
+                    <label for="ejecutivoATC">Ejecutivo ATC</label>
+                </div>
+                <div class="mt-2 col-md-4">
+                    <input type="checkbox" name="puesto[]" id="ejecutivoSRATC" value="Ejecutivo Sr ATC">
+                    <label for="ejecutivoSRATC">Ejecutivo Sr ATC</label>
+                </div>
+                <div class="mt-2 col-md-4">
+                    <input type="checkbox" name="puesto[]" id="jefeATC" value="Jefe ATC">
+                    <label for="jefeATC">Jefe ATC</label>
+                </div>
+                <div class="mt-2 col-md-4">
+                    <input type="checkbox" name="puesto[]" id="jefeRegionalATC" value="Jefe Regional ATC">
+                    <label for="jefeRegionalATC">Jefe Regional ATC</label>
+                </div>
+                <div class="mt-2 col-md-4">
+                    <input type="checkbox" name="puesto[]" id="gerenteATC" value="Gerente ATC">
+                    <label for="gerenteATC">Gerente ATC</label>
+                </div>
+            </div>
+
+            <!-- Marca -->
+            <div class="row mt-4 mb-4">
+                <h4 for="puesto">Marca: </h4>
+                <div class="mt-2 col-md-4">
+                    <input type="checkbox" name="marca[]" id="izzi" value="izzi">
+                    <label for="izzi">izzi</label>
+                </div>
+                <div class="mt-2 col-md-4">
+                    <input type="checkbox" name="marca[]" id="wizz" value="wizz">
+                    <label for="wizz">wizz</label>
+                </div>
+                <div class="mt-2 col-md-4">
+                    <input type="checkbox" name="marca[]" id="wizzplus" value="wizz plus">
+                    <label for="wizzplus">wizz plus</label>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div id="result"></div>
+            </div>
+
+            <input type="hidden" name="ciudades" id="ciudades">
+
+            <!-- SUBMIT -->
+            <input class="btn btn-primary mt-4 mb-4 col-md-2 offset-md-5" type="submit" value="Guardar" id="btnGuardar" disabled>
+        </form>
+    
+    </div>
+    
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
+    <!-- Sweet Alert -->
+    <script src="sweetalert2.all.min.js"></script>
+
+    <script>
+        const btnGuardar = document.querySelector('#btnGuardar');
+        const titulo = document.getElementById("titulo");
+        const descripcion = document.getElementById("descripcion");
+        const portada = document.getElementById("portada");
+
+        titulo.addEventListener("input", validarCampos);
+        descripcion.addEventListener("input", validarCampos);
+        portada.addEventListener("input", validarCampos);
+
+        function validarCampos() {
+            // Verificar si los campos requeridos tienen contenido
+            if (titulo.value.trim() !== "" && descripcion.value.trim() !== "" && portada.value.trim() !== "") {
+                // Si los campos están llenos, activar el botón de guardar
+                btnGuardar.disabled = false;
+            } else {
+                // Si algún campo está vacío, desactivar el botón de guardar
+                btnGuardar.disabled = true;
+            }
+        }
+    </script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            // Inicializar contador de archivos
+            let contador = 1;
+
+            // Obtener referencia al contenedor de inputs
+            const contenedorArchivos = document.getElementById("contenedorArchivos");
+            const botonArchivo = document.getElementById("botonArchivo");
+            const contadorArchivos = document.getElementById("contadorArchivos");
+
+            // Agregar listener al botón para agregar input
+            botonArchivo.addEventListener("click", function() {
+                // Incrementa el contador
+                contador++;
+                // Imprime el valor del contador
+                contadorArchivos.textContent = `Archivos: ${contador}`;
+
+                // Crear un nuevo input de tipo file
+                let nuevoInputFile = document.createElement("input");
+                nuevoInputFile.type = "file";
+                nuevoInputFile.setAttribute("multiple", "multiple");
+
+                // Agregar clase para facilitar la selección y estilización si es necesario
+                nuevoInputFile.classList.add("fileInput");
+
+                // Agregar un botón de eliminar al lado del input
+                const btnEliminarInputFile = document.createElement("button");
+                btnEliminarInputFile.classList.add('btn-danger');
+                btnEliminarInputFile.textContent = "X";
+
+                btnEliminarInputFile.addEventListener("click", function() {
+                    // Remover el input y el botón de eliminar
+                    contenedorArchivos.removeChild(nuevoInputFile);
+                    contenedorArchivos.removeChild(btnEliminarInputFile);
+                    // Decrementa el contador
+                    contador = contador -1;
+                    // Imprime el valor del contador
+                    contadorArchivos.textContent = `Archivos: ${contador}`;
+                });
+
+                // Agregar el nuevo input y el botón de eliminar al contenedor
+                contenedorArchivos.appendChild(nuevoInputFile);
+                contenedorArchivos.appendChild(btnEliminarInputFile);
+            });
+        });
+
+        // Obtener el formulario
+        var formulario = document.getElementById('formulario');
+
+        // Agregar un evento para el envío del formulario
+        formulario.addEventListener('submit', function(event) {
+            // Obtener todos los checkboxes seleccionados
+            var checkboxes = document.querySelectorAll('input[type=checkbox]:checked');
+
+            // Crear un array para almacenar los valores seleccionados
+            var valoresSeleccionados = [];
+
+            // Iterar sobre los checkboxes seleccionados y obtener sus valores
+            checkboxes.forEach(function(checkbox) {
+                valoresSeleccionados.push(checkbox.value);
+            });
+
+            // Asignar los valores seleccionados a un campo oculto del formulario
+            var inputHidden = document.createElement('input');
+            inputHidden.type = 'hidden';
+            inputHidden.name = 'valores_seleccionados';
+            inputHidden.value = valoresSeleccionados.join(',');
+            formulario.appendChild(inputHidden);
+        });
+    </script>
+    
+    <!-- AJAX -->
+    <script>
+        $(document).ready(function() {
+            // Manejar el clic en el título de la región
+            $(document).on('click', '.region-title', function() {
+                var region = $(this).text().trim();
+                var allChecked = $('input[type="checkbox"][name="' + region + '"]:checked').length === $('input[type="checkbox"][name="' + region + '"]').length;
+                $('input[type="checkbox"][name="' + region + '"]').prop('checked', !allChecked);
+            });
+
+            // Manejar el envío del formulario al hacer clic en el botón de guardar
+            $('#formulario').submit(function(event) {
+                // Prevenir el envío del formulario por defecto
+                event.preventDefault();
+
+                // Obtener los valores de los checkboxes seleccionados
+                var selectedValues = [];
+                $('input[type="checkbox"]:checked').each(function() {
+                    selectedValues.push($(this).val());
+                });
+
+                // Agregar los valores seleccionados a un campo oculto en el formulario
+                $('<input>').attr({
+                    type: 'hidden',
+                    name: 'selectedValues',
+                    value: selectedValues.join(',')
+                }).appendTo($(this));
+
+                // Enviar el formulario
+                this.submit();
+            });
+
+            // Manejar el cambio en los checkboxes de marca
+            $('input[type="checkbox"]').change(function() {
+                $('#result').empty();
+                var selectedBrands = [];
+                $('input[type="checkbox"]:checked').each(function() {
+                    selectedBrands.push($(this).val());
+                });
+                if(selectedBrands.length === 0) {
+                    return;
+                }
+                $.ajax({
+                    url: 'php/cargarDatos.php',
+                    type: 'POST',
+                    data: { marcas: selectedBrands },
+                    success: function(response) {
+                        var divisiones = JSON.parse(response);
+
+                        var html = '<div class="row">';
+                        for (var division in divisiones) {
+                            html += '<h5>' + division + '</h5>';
+                            for (var region in divisiones[division]) {
+                                html +=  '<div class="col-md-4">';
+                                html += '<h6 class="region-title">' + region + '</h6>';
+                                for (var i = 0; i < divisiones[division][region].length; i++) {
+                                    var ciudad = divisiones[division][region][i];
+                                    html += '<label class="mb-2"><input type="checkbox" id="' + ciudad + '" name="' + region + '" value="' + ciudad + '">' + ciudad + '</label><br>';
+                                }
+                                html +=  '</div>';
+                            }
+                        }
+                        html += '</div>';
+
+                        $('#result').html(html);
+                    },
+                    error: function(xhr, status, error) {
+                        console.error(error);
+                    }
+                });
+            });
+        });
+    </script>
+
+    <!-- script>
+        $(document).ready(function() {
+            // Manejar el clic en el título de la región
+            $(document).on('click', '.region-title', function() {
+                var region = $(this).text().trim();
+                var allChecked = $('input[type="checkbox"][name="' + region + '"]:checked').length === $('input[type="checkbox"][name="' + region + '"]').length;
+                $('input[type="checkbox"][name="' + region + '"]').prop('checked', !allChecked);
+            });
+
+            // Manejar el envío del formulario al hacer clic en el botón de guardar
+            $('#formulario').submit(function(event) {
+                // Prevenir el envío del formulario por defecto
+                event.preventDefault();
+
+                // Obtener los valores de los checkboxes seleccionados
+                var selectedValues = [];
+                $('input[type="checkbox"]:checked').each(function() {
+                    selectedValues.push($(this).val());
+                });
+
+                // Agregar los valores seleccionados a un campo oculto en el formulario
+                $('<input>').attr({
+                    type: 'hidden',
+                    name: 'selectedValues',
+                    value: selectedValues.join(',')
+                }).appendTo($(this));
+
+                // Enviar el formulario
+                this.submit();
+            });
+
+            // Manejar el cambio en los checkboxes de marca y ciudades
+            $('input[type="checkbox"]').change(function() {
+                $('#result').empty();
+                var selectedBrands = [];
+                var selectedCities = [];
+
+                // Iterar sobre los checkboxes seleccionados
+                $('input[type="checkbox"]:checked').each(function() {
+                    // Verificar si es una marca o una ciudad y agregar al arreglo correspondiente
+                    if ($(this).hasClass('marca')) {
+                        selectedBrands.push($(this).val());
+                    } else {
+                        selectedCities.push($(this).val());
+                    }
+                });
+
+                // Agregar los valores seleccionados de las marcas a un campo oculto en el formulario
+                $('<input>').attr({
+                    type: 'hidden',
+                    name: 'marcas',
+                    value: selectedBrands.join(',')
+                }).appendTo('#formulario');
+
+                // Agregar los valores seleccionados de las ciudades a un campo oculto en el formulario
+                $('<input>').attr({
+                    type: 'hidden',
+                    name: 'ciudades',
+                    value: selectedCities.join(',')
+                }).appendTo('#formulario');
+            });
+        });
+
+    </script -->
+</body>
+</html>
